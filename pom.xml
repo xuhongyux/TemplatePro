@@ -18,6 +18,7 @@
     <modules>
         <module>springboot_demo</module>
         <module>java_demo</module>
+        <module>springboot_send_message</module>
     </modules>
 
 </project>
