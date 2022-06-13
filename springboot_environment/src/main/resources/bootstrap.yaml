@@ -1,0 +1,32 @@
+spring:
+  application:
+    name: environment
+
+server:
+  port: 8900
+
+---
+spring:
+  profiles: xiayu
+  cloud:
+    nacos:
+      discovery:
+        server-addr: 172.16.51.14:8848
+        group: group-local
+        namespace: xiayu
+      config:
+        server-addr: 172.16.51.14:8848
+        file-extension: yaml
+        namespace: xiayu
+
+---
+spring:
+  profiles: local
+  cloud:
+    nacos:
+      discovery:
+        server-addr: 172.16.51.14:8848
+        group: group-local
+      config:
+        server-addr: 172.16.51.14:8848
+        file-extension: yaml

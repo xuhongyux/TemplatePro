@@ -16,9 +16,15 @@
     </properties>
 
     <modules>
-        <module>springboot_demo</module>
         <module>java_demo</module>
+        <module>springboot_demo</module>
         <module>springboot_send_message</module>
+        <module>springboot_environment</module>
     </modules>
+
+    <dependencies>
+
+
+    </dependencies>
 
 </project>
