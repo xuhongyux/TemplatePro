@@ -8,6 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
+import sun.misc.BASE64Encoder;
 
 import javax.imageio.ImageIO;
 import javax.servlet.http.HttpServletRequest;
@@ -15,9 +16,13 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import java.awt.*;
 import java.awt.image.BufferedImage;
-import java.io.OutputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 
 /**
+ * 参考文章地址
+ * https://juejin.cn/post/6844903962018070536
+ *
  * @author xuhongyu
  * @create 2022-06-16 8:55 下午
  */
@@ -30,9 +35,9 @@ public class VerifyController {
     CommonConfig commonConfig;
 
 
-    @ApiOperation(value = "hello", notes = "欢迎接口")
+    @ApiOperation(value = "getVersify", notes = "获取验证码图片")
     @GetMapping("/getVersify")
-    public void getVersify(HttpServletResponse response, HttpServletRequest request) throws Exception {
+    public String getVersify(HttpServletResponse response, HttpServletRequest request) throws Exception {
         // 获取到session
         HttpSession session = request.getSession();
         // 取到sessionid
@@ -64,7 +69,7 @@ public class VerifyController {
         // 打印验证码
         System.out.println(objs[0]);
 
-     //   commonConfig.getVerifyCode().put(("VERIFY_CODE_" + id), objs[0].toString());
+        //   commonConfig.getVerifyCode().put(("VERIFY_CODE_" + id), objs[0].toString());
 
 
 //        // 设置redis值的序列化方式
@@ -75,9 +80,11 @@ public class VerifyController {
 
         // 将图片输出给浏览器
         BufferedImage image = (BufferedImage) objs[1];
-        response.setContentType("image/png");
-        OutputStream os = response.getOutputStream();
-        ImageIO.write(image, "png", os);
+//        response.setContentType("image/png");
+//        OutputStream os = response.getOutputStream();
+//        ImageIO.write(image, "png", os);
+
+        return bufferedImageToBase64(image);
     }
 
     /**
@@ -113,11 +120,31 @@ public class VerifyController {
         session.removeAttribute("SESSION_VERIFY_CODE_" + id);
 
         // 验证通过之后手动将验证码失效
-       // redisTemplate.delete(verifyCodeKey);
+        // redisTemplate.delete(verifyCodeKey);
 
         // 这里做具体业务相关
 
         return "验证码正确!";
+    }
+
+
+    private String bufferedImageToBase64(BufferedImage bufferedImage) {
+        //io流
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        try {
+            //写入流中
+            ImageIO.write(bufferedImage, "png", baos);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        //转换成字节
+        byte[] bytes = baos.toByteArray();
+        BASE64Encoder encoder = new BASE64Encoder();
+        //转换成base64串
+        String png_base64 = encoder.encodeBuffer(bytes).trim();
+        //删除 \r\n
+        png_base64 = png_base64.replaceAll("\n", "").replaceAll("\r", "");
+        return "data:image/jpg;base64," + png_base64;
     }
 
 }
