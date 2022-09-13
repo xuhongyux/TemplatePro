@@ -329,7 +329,7 @@ public class FileUtil {
         ArrayList<String> directories = new ArrayList<>();
         File directory = new File(folderPath);
         if (!directory.isDirectory()) {
-            throw new RuntimeException('"' + folderPath + '"' + " input path is not a Directory , please input the right path of the Directory. ^_^...^_^");
+            throw new RuntimeException('"' + folderPath + '"' + " input path is not a Directory , please input the right path of the Directory.");
         }
         if (directory.isDirectory()) {
             File[] fileList = directory.listFiles();
