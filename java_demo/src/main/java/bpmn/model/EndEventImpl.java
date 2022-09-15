@@ -10,7 +10,7 @@ import java.util.List;
  * @create 2022-08-29 2:41 下午
  */
 
-public class EndEventImpl extends EventAbstract  implements BaseElement {
+public class EndEventImpl extends EventAbstract  {
 
     private String id;
 

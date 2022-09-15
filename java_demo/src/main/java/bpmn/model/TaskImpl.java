@@ -12,7 +12,7 @@ import java.util.List;
  * @author xuhongyu
  * @create 2022-08-29 3:10 下午
  */
-public class TaskImpl extends EventAbstract implements BaseElement {
+public class TaskImpl extends EventAbstract {
 
     private String id;
 

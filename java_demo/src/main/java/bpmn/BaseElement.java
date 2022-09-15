@@ -1,13 +1,15 @@
 package bpmn;
 
 
+import java.io.Serializable;
+
 /**
  * 基础元素
  *
  * @author xuhongyu
  * @create 2022-08-29 2:13 下午
  */
-public interface BaseElement {
+public interface BaseElement extends Serializable {
 
     /**
      * 获取Id

@@ -8,6 +8,7 @@ import bpmn.model.ParallelGatewayImpl;
 import bpmn.model.SequenceFlowImpl;
 import bpmn.model.StartEventImpl;
 import bpmn.model.TaskImpl;
+import org.apache.commons.lang3.StringUtils;
 import org.camunda.bpm.model.bpmn.Bpmn;
 import org.camunda.bpm.model.bpmn.BpmnModelInstance;
 import org.camunda.bpm.model.bpmn.instance.FlowElement;
@@ -20,6 +21,7 @@ import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 /**
@@ -119,12 +121,14 @@ public class BpmnBaseServiceImpl implements BpmnBaseService {
                     baseElement = sequenceFlow;
                 }
                 if (baseElement == null) {
-                    System.out.println("bpmn类型暂不支持！->"+ flowElement.getName());
+                    System.out.println("bpmn类型暂不支持！->" + flowElement.getName());
                     throw new RuntimeException();
                 }
 
                 String id = flowElement.getId();
-                String name = flowElement.getName();
+
+
+                String name = StringUtils.isEmpty(flowElement.getName()) ? BpmnBaseServiceImpl.createUUID() : flowElement.getName();
                 baseElement.setId(id);
                 baseElement.setName(name);
                 baseElementMap.put(id, baseElement);
@@ -133,4 +137,16 @@ public class BpmnBaseServiceImpl implements BpmnBaseService {
 
         return baseElementMap;
     }
+
+
+    /**
+     * 获取UUID
+     *
+     * @return
+     */
+    public static String createUUID() {
+        String uuid = UUID.randomUUID().toString().replace("-", "");
+        return uuid;
+    }
+
 }

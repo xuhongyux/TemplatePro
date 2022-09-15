@@ -7,7 +7,7 @@ import java.util.List;
  * @author xuhongyu
  * @create 2022-08-29 3:19 下午
  */
-public interface Event {
+public interface Event extends BaseElement{
 
     /**
      * 设置来源
@@ -58,6 +58,14 @@ public interface Event {
     BaseElement getOutGoingByName(String name);
 
 
+    /**
+     * 根据id获取出目标节点
+     * @param  id
+     * @return
+     */
+    BaseElement getOutGoingById(String id);
+
+
 
     /**
      * 获取一个目标节点
@@ -72,4 +80,37 @@ public interface Event {
      * @return 当下一个节点为end节点，或者没有下个节点时返回true
      */
     boolean checkLastOutGoingIsEnd();
+
+    /**
+     * 获取下一个可以运行的节点
+     *
+     * @return
+     */
+    BaseElement getRunNextElement();
+
+
+    /**
+     * 获取所属资源名称
+     * @return
+     */
+    String getResourceName();
+
+    /**
+     *
+     * 设置资源名称
+     * @param resourceName
+     */
+    void setResourceName(String resourceName);
+
+    /**
+     * 获取消费时间
+     * @return
+     */
+    Integer getConsumptionTime();
+
+    /**
+     * 设置消费时间
+     * @param consumptionTime
+     */
+    void setConsumptionTime(Integer consumptionTime);
 }

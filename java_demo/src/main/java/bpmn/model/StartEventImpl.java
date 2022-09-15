@@ -10,7 +10,7 @@ import java.util.List;
  * @author xuhongyu
  * @create 2022-08-29 2:33 下午
  */
-public class StartEventImpl extends EventAbstract implements BaseElement {
+public class StartEventImpl extends EventAbstract  {
 
     private String id;
 
