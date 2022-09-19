@@ -3,7 +3,9 @@ package bpmn.impl;
 import bpmn.BaseElement;
 import bpmn.BpmnBaseService;
 import bpmn.Event;
+import bpmn.Gateway;
 import bpmn.model.EndEventImpl;
+import bpmn.model.ExclusiveGatewayImpl;
 import bpmn.model.ParallelGatewayImpl;
 import bpmn.model.SequenceFlowImpl;
 import bpmn.model.StartEventImpl;
@@ -21,6 +23,7 @@ import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -69,6 +72,21 @@ public class BpmnBaseServiceImpl implements BpmnBaseService {
         }
 
         List<BaseElement> rootElements = baseElements.stream().filter(vo -> vo instanceof StartEventImpl).collect(Collectors.toList());
+
+        // 设置网关状态
+        List<BaseElement> baseElementGateways = baseElements.stream().filter(po -> po instanceof Gateway).collect(Collectors.toList());
+        for (BaseElement baseElementGateway : baseElementGateways) {
+            Gateway gateway = (Gateway) baseElementGateway;
+
+            if (gateway.getOutgoing().size() > 1) {
+                gateway.setStartGatewayFlag(true);
+            } else {
+                gateway.setStartGatewayFlag(false);
+            }
+            Set<String> incomingEventId = gateway.getIncoming().stream().map(BaseElement::getId).collect(Collectors.toSet());
+
+            gateway.setPrepareEventId(incomingEventId);
+        }
         return rootElements;
     }
 
@@ -77,7 +95,7 @@ public class BpmnBaseServiceImpl implements BpmnBaseService {
      * 解析BPMN文件流
      *
      * @param bpmnModelInstance
-     * @return
+     * @return key 组件Id value 组件
      */
     private Map<String, BaseElement> doParseBpmnFile(BpmnModelInstance bpmnModelInstance) {
 
@@ -106,9 +124,14 @@ public class BpmnBaseServiceImpl implements BpmnBaseService {
                     baseElement = new TaskImpl();
                 }
 
-                // 网关节点
-                if (flowElement instanceof org.camunda.bpm.model.bpmn.impl.instance.ParallelGatewayImpl || flowElement instanceof org.camunda.bpm.model.bpmn.impl.instance.ExclusiveGatewayImpl) {
+                // 并行网关
+                if (flowElement instanceof org.camunda.bpm.model.bpmn.impl.instance.ParallelGatewayImpl ) {
                     baseElement = new ParallelGatewayImpl();
+                }
+
+                // 专属网关
+                if (flowElement instanceof org.camunda.bpm.model.bpmn.impl.instance.ExclusiveGatewayImpl) {
+                    baseElement = new ExclusiveGatewayImpl();
                 }
 
                 // 边节点

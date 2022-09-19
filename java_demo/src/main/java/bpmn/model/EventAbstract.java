@@ -17,6 +17,11 @@ import java.util.stream.Collectors;
  */
 public abstract class EventAbstract implements Event {
 
+
+    private String id;
+
+    private String name;
+
     /**
      * 所属资源名称
      */
@@ -37,6 +42,28 @@ public abstract class EventAbstract implements Event {
      * 出边
      */
     public List<BaseElement> outgoing = new ArrayList<>();
+
+
+    @Override
+    public String getId() {
+        return id;
+    }
+
+    @Override
+    public void setId(String id) {
+        this.id = id;
+    }
+
+
+    @Override
+    public String getName() {
+        return name;
+    }
+
+    @Override
+    public void setName(String name) {
+        this.name = name;
+    }
 
 
     @Override
@@ -126,19 +153,6 @@ public abstract class EventAbstract implements Event {
         return doCheckLastOutGoingIsEnd(this.outgoing);
     }
 
-    @Override
-    public BaseElement getRunNextElement() {
-        if (CollectionUtils.isEmpty(this.outgoing)) {
-            return new EndEventImpl();
-        }
-        if (this.outgoing.size() != 1) {
-            throw new RuntimeException("下一个节点数量异常");
-        }
-        BaseElement baseElement = this.outgoing.get(0);
-
-        return baseElement;
-    }
-
 
     /**
      * 获取所属资源名称
@@ -177,6 +191,37 @@ public abstract class EventAbstract implements Event {
     @Override
     public void setConsumptionTime(Integer consumptionTime) {
         this.consumptionTime = consumptionTime;
+    }
+
+
+    /**
+     * 获取下一个可以运行的节点
+     *
+     * @return
+     */
+    @Override
+    public List<BaseElement> getRunNextElement() {
+        List<BaseElement> baseElements = new ArrayList<>();
+        for (BaseElement baseElement : this.outgoing) {
+            if (baseElement instanceof Gateway) {
+                baseElements.addAll(((Gateway) baseElement).getRunNextElement());
+            } else {
+                baseElements.add(baseElement);
+            }
+        }
+        return baseElements;
+    }
+
+    ;
+
+    @Override
+    public void runFinish() {
+        List<BaseElement> outgoing = this.getOutgoing();
+        for (BaseElement baseElement : outgoing) {
+            if (baseElement instanceof Gateway) {
+                ((Gateway) baseElement).finishPrepareEvent(this.getId());
+            }
+        }
     }
 
 

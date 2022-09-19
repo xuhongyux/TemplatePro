@@ -53,11 +53,6 @@
       <outgoing>Flow_1tydlkw</outgoing>
     </task>
     <sequenceFlow id="Flow_1gp9mhw" sourceRef="Gateway_0jzwala" targetRef="Activity_1ys2ruu" />
-    <exclusiveGateway id="Gateway_0c37enk" name="并行网关结束">
-      <incoming>Flow_1qf8dqs</incoming>
-      <incoming>Flow_1tydlkw</incoming>
-      <outgoing>Flow_1hciwh7</outgoing>
-    </exclusiveGateway>
     <sequenceFlow id="Flow_1qf8dqs" sourceRef="Activity_1y2fpu1" targetRef="Gateway_0c37enk" />
     <sequenceFlow id="Flow_1tydlkw" sourceRef="Activity_1ys2ruu" targetRef="Gateway_0c37enk" />
     <task id="Activity_0h8e0wz" name="经理查看订单信息">
@@ -69,6 +64,11 @@
       <incoming>Flow_0g2vhtf</incoming>
     </endEvent>
     <sequenceFlow id="Flow_0g2vhtf" sourceRef="Activity_0h8e0wz" targetRef="Event_0pv3nwr" />
+    <parallelGateway id="Gateway_0c37enk" name="并行网关结束">
+      <incoming>Flow_1qf8dqs</incoming>
+      <incoming>Flow_1tydlkw</incoming>
+      <outgoing>Flow_1hciwh7</outgoing>
+    </parallelGateway>
   </process>
   <bpmndi:BPMNDiagram id="BpmnDiagram_1">
     <bpmndi:BPMNPlane id="BpmnPlane_1" bpmnElement="Process_1">
@@ -184,12 +184,6 @@
         <omgdc:Bounds x="1200" y="260" width="100" height="80" />
         <bpmndi:BPMNLabel />
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Gateway_0c37enk_di" bpmnElement="Gateway_0c37enk" isMarkerVisible="true">
-        <omgdc:Bounds x="1385" y="185" width="50" height="50" />
-        <bpmndi:BPMNLabel>
-          <omgdc:Bounds x="1297" y="200" width="66" height="14" />
-        </bpmndi:BPMNLabel>
-      </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Activity_0h8e0wz_di" bpmnElement="Activity_0h8e0wz">
         <omgdc:Bounds x="1520" y="170" width="100" height="80" />
         <bpmndi:BPMNLabel />
@@ -198,6 +192,12 @@
         <omgdc:Bounds x="1712" y="192" width="36" height="36" />
         <bpmndi:BPMNLabel>
           <omgdc:Bounds x="1719" y="235" width="22" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_184tibo_di" bpmnElement="Gateway_0c37enk">
+        <omgdc:Bounds x="1385" y="185" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <omgdc:Bounds x="1297" y="200" width="66" height="14" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
     </bpmndi:BPMNPlane>

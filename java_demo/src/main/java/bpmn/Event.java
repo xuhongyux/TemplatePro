@@ -86,7 +86,7 @@ public interface Event extends BaseElement{
      *
      * @return
      */
-    BaseElement getRunNextElement();
+    List<BaseElement> getRunNextElement();
 
 
     /**
@@ -113,4 +113,10 @@ public interface Event extends BaseElement{
      * @param consumptionTime
      */
     void setConsumptionTime(Integer consumptionTime);
+
+
+    /**
+     * 当前任务完成，通知下一个节点
+     */
+    void runFinish();
 }

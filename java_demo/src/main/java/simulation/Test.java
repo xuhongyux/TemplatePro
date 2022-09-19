@@ -8,6 +8,10 @@ import bpmn.bo.ResourceBo;
 import bpmn.bo.ResourceInfoBo;
 import bpmn.impl.BpmnBaseServiceImpl;
 import bpmn.model.EndEventImpl;
+import bpmn.model.EventAbstract;
+import bpmn.model.ExclusiveGatewayImpl;
+import bpmn.model.GatewayAbstract;
+import org.apache.commons.lang3.SerializationUtils;
 import util.FileUtils;
 
 import java.io.ByteArrayInputStream;
@@ -15,6 +19,7 @@ import java.io.File;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Semaphore;
@@ -33,7 +38,20 @@ public class Test {
      */
     private static volatile Integer timeLine = new Integer(0);
 
-    public static void main(String[] args) throws InterruptedException {
+
+    @org.junit.Test
+    public void testClone() throws CloneNotSupportedException {
+        ExclusiveGatewayImpl exclusiveGateway = new ExclusiveGatewayImpl();
+        HashSet<String> objects = new HashSet<>();
+        objects.add("1123123");
+        exclusiveGateway.setPrepareEventId(objects);
+
+        GatewayAbstract clone = exclusiveGateway.clone();
+
+        System.out.println();
+    }
+
+    public static void main(String[] args) throws InterruptedException, CloneNotSupportedException {
         String filePath = "/Users/idea_code/TemplatePro/java_demo/src/main/resources/bpmn/流程仿真模版.bpmn";
 
         String fileCode = FileUtils.readFile(new File(filePath));
@@ -43,7 +61,8 @@ public class Test {
 
         // 解析
         List<BaseElement> baseElements = bpmnBaseService.parseBpmnFile(is);
-        BaseElement baseElementsRoot = bpmnBaseService.relationCreatBpmn(baseElements).get(0);
+        EventAbstract baseElementsRoot = (EventAbstract) bpmnBaseService.relationCreatBpmn(baseElements).get(0);
+
 
         // 数据初始化
         dataInit(baseElements);
@@ -60,10 +79,13 @@ public class Test {
         List<ProcessRunBo> processRunBos = new ArrayList<>();
         Map<String, ProcessRunBo> processRunBoMap = new HashMap<>();
         // 创建资源
-        for (int i = 0; i <= 100; i++) {
+        for (int i = 0; i <= 3; i++) {
 
             String caseId = "case" + i;
-            ProcessRunBo processRunBo = new ProcessRunBo(caseId, (Event) baseElementsRoot);
+            // 拷贝对象
+            BaseElement clone = SerializationUtils.clone(baseElementsRoot);
+
+            ProcessRunBo processRunBo = new ProcessRunBo(caseId, (Event)clone);
             processRunBo.setTimeLine(timeLine);
             processRunBos.add(processRunBo);
             processRunBoMap.put(caseId, processRunBo);
@@ -71,96 +93,114 @@ public class Test {
         List<Object> completes = new ArrayList<>();
 
         // 开始处理
-        for (Integer i = 60 * 24 * 7; i > timeLine; timeLine++) {
-            if(processRunBos.size() ==0){
-                System.out.println("运行完毕：当前时间线为："+timeLine);
+        for (Integer i = 60 * 24 * 7 * 12; i > timeLine; timeLine++) {
+            if (processRunBos.size() == 0) {
+                System.out.println("运行完毕：当前时间线为：" + timeLine);
                 break;
             }
 
-            if (timeLine % 10 == 1) {
+            if (timeLine % 1011 == 1) {
                 for (Map.Entry<String, Semaphore> stringSemaphoreEntry : semaphoreMap.entrySet()) {
                     System.out.println("剩余资源情况：id:" + stringSemaphoreEntry.getKey() + "### 剩余量：  " + stringSemaphoreEntry.getValue().availablePermits());
                 }
             }
-            if (timeLine % 101 == 1) {
-                ProcessRunBo processRunBo = new ProcessRunBo(timeLine.toString(), (Event) baseElementsRoot);
-                processRunBo.setTimeLine(timeLine);
-                processRunBos.add(processRunBo);
-            }
+//            if (timeLine % 101 == 1) {
+//                ProcessRunBo processRunBo = new ProcessRunBo(timeLine.toString(), (Event) baseElementsRoot);
+//                processRunBo.setTimeLine(timeLine);
+//                processRunBos.add(processRunBo);
+//            }
 
-
+            // 开始遍历每一个流程
+            processRun:
             for (int j = 0; j < processRunBos.size(); j++) {
+
                 ProcessRunBo processRunBo = processRunBos.get(j);
                 processRunBo.setTimeLine(timeLine);
 
-                Event currentBaseElement = processRunBo.getCurrentBaseElements();
-                ResourceBo resourceBo = resourceBoMap.get(currentBaseElement.getResourceName());
+                List<Event> currentBaseElements = processRunBo.getCurrentBaseElements();
 
-                if (!processRunBo.getAcquireFlag()) {
-                    // 尝试占用资源，如果失败下一次轮训的时候再尝试抢占
-                    if (processRunBo.getSemaphore().tryAcquire()) {
-                        processRunBo.setConsumptionTimeEnd(timeLine + resourceBo.getConsumptionTime());
-                        processRunBo.setAcquireFlag(true);
-                        processRunBo.endWaitTime();
-                    }
-                    continue;
-                }
+                // 收集本次运行剩下的节点信息
+                List<Event> runNextAllElements = new ArrayList<>();
+                // 开始遍历当前运行节点
+                for (Event currentBaseElement : currentBaseElements) {
+                    // 设置当前运行的eventId
+                    processRunBo.setCurrentRunEventId(currentBaseElement.getId());
 
-                // 检查当前节点是否结束
-                Integer consumptionTimeEnd = processRunBo.getConsumptionTimeEnd();
+                    ResourceBo resourceBo = resourceBoMap.get(currentBaseElement.getResourceName());
+                    if (!processRunBo.getAcquireFlag()) {
+                        // 尝试占用资源，如果失败下一次轮训的时候再尝试抢占
+                        if (processRunBo.getSemaphore().tryAcquire()) {
+                            processRunBo.setConsumptionTimeEnd(timeLine + resourceBo.getConsumptionTime());
+                            processRunBo.setAcquireFlag(true);
 
-                // 如果资源占用结束
-                if (consumptionTimeEnd <= timeLine) {
-                    // 释放当前资源
-                    if (processRunBo.getSemaphore() != null) {
-                        processRunBo.releaseSemaphore();
-                        System.out.println("释放资源：" + processRunBo.getCaseId());
-                        processRunBo.setSemaphore(null);
-
-                    }
-                    // 占用下一个资源
-                    Event runNextElement = (Event) currentBaseElement.getRunNextElement();
-                    if (runNextElement instanceof Gateway) {
-                        // todo 网关逻辑
-                        Gateway runNextElementGateway = (Gateway) runNextElement;
-                        runNextElement = (Event) runNextElementGateway.nextProbabilityEvent();
-                    }
-
-                    if (runNextElement instanceof EndEventImpl) {
-
-                        processRunBos.remove(processRunBo);
-                        completes.add(processRunBo);
-
-                        processRunBo.releaseSemaphore();
-                        j--;
-                        System.out.println("节点运行完毕：" + processRunBo.getCaseId());
+                            // 结束等待
+                            processRunBo.endWaitTime();
+                        }
+                        runNextAllElements.add(currentBaseElement);
                         continue;
                     }
-                    if (runNextElement.getResourceName() == null) {
-                        System.out.println("runNextElement.getResourceName() 为null");
-                    }
-                    ResourceBo nextResourceBo = resourceBoMap.get(runNextElement.getResourceName());
 
-                    processRunBo.setCurrentBaseElements(runNextElement);
+                    // 检查当前节点是否结束
+                    Integer consumptionTimeEnd = processRunBo.getConsumptionTimeEnd();
 
-                    Semaphore semaphore = nextResourceBo.getSemaphore();
+                    // 如果资源占用结束
+                    if (consumptionTimeEnd <= timeLine) {
+                        // 释放当前资源
+                        if (processRunBo.getSemaphore() != null) {
+                            processRunBo.releaseSemaphore();
+                            System.out.println("释放资源：" + processRunBo.getCaseId()+"事件名称："+ currentBaseElement.getName());
+                            processRunBo.removeSemaphore();
+                        }
+                        // 当前任务完成，通知下一个资源
+                        currentBaseElement.runFinish();
+                        // 获取下一个资源
+                        List<BaseElement> runNextElements = currentBaseElement.getRunNextElement();
 
-                    processRunBo.setSemaphore(semaphore);
-                    // 尝试占用资源，如果失败下一次轮训的时候再尝试抢占
-                    if (nextResourceBo.getSemaphore().tryAcquire()) {
-                        processRunBo.setConsumptionTimeEnd(timeLine + nextResourceBo.getConsumptionTime());
+                        for (BaseElement runNextElement : runNextElements) {
+
+                            if (runNextElement instanceof EndEventImpl) {
+
+                                processRunBos.remove(processRunBo);
+                                completes.add(processRunBo);
+
+                                processRunBo.releaseSemaphore();
+                                System.out.println("释放资源：" + processRunBo.getCaseId()+"事件名称："+ currentBaseElement.getName());
+
+                                j--;
+                                System.out.println("节点运行完毕：" + processRunBo.getCaseId());
+                                continue processRun;
+                            }
+                            runNextAllElements.add((Event) runNextElement);
+                        }
+
+                        // 下一个任务抢占资源
+                        for (Event runNextAllElement : runNextAllElements) {
+                            processRunBo.setCurrentRunEventId(runNextAllElement.getId());
+                            ResourceBo nextResourceBo = resourceBoMap.get(runNextAllElement.getResourceName());
+                            Semaphore semaphore = nextResourceBo.getSemaphore();
+                            processRunBo.setSemaphore(semaphore);
+                            // 尝试占用资源，如果失败下一次轮训的时候再尝试抢占
+                            if (nextResourceBo.getSemaphore().tryAcquire()) {
+                                processRunBo.setConsumptionTimeEnd(timeLine + runNextAllElement.getConsumptionTime());
+                                processRunBo.setAcquireFlag(true);
+                            } else {
+                                System.out.println("请求资源失败：等待下次尝试：" + runNextAllElement.getName());
+                                processRunBo.setAcquireFlag(false);
+                                processRunBo.setStartWaitTime();
+                            }
+                        }
+
+                        // 运行未结束是进行节点收集
                     } else {
-                        System.out.println("请求资源失败：等待下次尝试：" + runNextElement.getName());
-                        processRunBo.setAcquireFlag(false);
-                        processRunBo.setStartWaitTime();
+                        runNextAllElements.add(currentBaseElement);
                     }
-
                 }
+                // 当前节点刷新
+                processRunBo.setCurrentBaseElements(runNextAllElements);
             }
         }
 
-        System.out.println(baseElementsRoot);
-        System.out.println(completes);
+
     }
 
 
